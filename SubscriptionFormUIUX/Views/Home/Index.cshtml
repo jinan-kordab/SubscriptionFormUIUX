@@ -1,0 +1,1529 @@
+﻿@{
+    Layout = "";
+}
+
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <title>Subscription with rates form</title>
+    <script src="~/aspnet/jquery-1.9.1.js"></script>
+    <script src="~/aspnet/bootstrap.js"></script>
+    <script src="~/aspnet/jquery.creditCardValidator.js"></script>
+    <link href="~/aspnet/bootstrap.css" rel="stylesheet" />
+    <link rel="stylesheet" href="../Css/background.css" />
+    <script src="~/aspnet/number-polyfill.js"></script>
+    <script src="~/aspnet/md5.js"></script>
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <style type="text/css">
+        .button-box {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .alert-success2 {
+            color: #51607b;
+            background-color: #dde1e9;
+            border-color: #d1d6e1;
+        }
+
+        .border {
+            border: 1px solid #CCC;
+        }
+
+
+
+        .stepwizard-step p {
+            margin-top: 10px;
+        }
+
+        .stepwizard-row {
+            display: table-row;
+        }
+
+        .stepwizard {
+            display: table;
+            width: 100%;
+            position: relative;
+        }
+
+        .stepwizard-step button[disabled] {
+            opacity: 1 !important;
+            filter: alpha(opacity=100) !important;
+        }
+
+        .stepwizard-row:before {
+            top: 14px;
+            bottom: 0;
+            position: absolute;
+            content: " ";
+            width: 100%;
+            height: 1px;
+            background-color: #ccc;
+            z-order: 0;
+        }
+
+        .stepwizard-step {
+            display: table-cell;
+            text-align: center;
+            position: relative;
+        }
+
+        .btn-circle {
+            width: 30px;
+            height: 30px;
+            text-align: center;
+            padding: 6px 0;
+            font-size: 12px;
+            line-height: 1.428571429;
+            border-radius: 15px;
+        }
+    </style>
+
+    <script type="text/javascript">
+
+		function valueChanged() {
+			if ($("#cbBillAddressDifferent").is(":checked")) {
+				$("#billAddrApartmentNum").show();
+				$("#billAddrStreetAddr").show();
+				$("#billAddrCity").show();
+				$("#billAddrState").show();
+				$("#billAddrZip").show();
+
+			}
+			else {
+				$("#billAddrApartmentNum").hide();
+				$("#billAddrStreetAddr").hide();
+				$("#billAddrCity").hide();
+				$("#billAddrState").hide();
+				$("#billAddrZip").hide();
+			}
+		}
+
+		function ConfirmEmailBlur() {
+
+			// Email validation
+			// 1.Check if the two emails are identical
+			if ($("#txtBoxEmail").val() != $("#txtBoxConfirmEMail").val()) {
+				alert("The EMAILS do not match ! Please re enter the email.");
+				$("#txtBoxConfirmEMail").val('');
+			}
+			else {
+				//2. If they are identical, check if the address is valid email format address
+				var x = $("#txtBoxConfirmEMail").val();
+				var atpos = x.indexOf("@@");
+				var dotpos = x.lastIndexOf(".");
+				if (atpos < 1 || dotpos < atpos + 2 || dotpos + 2 >= x.length) {
+					alert("Not a valid e-mail address");
+					$("#txtBoxConfirmEMail").val('');
+					return false;
+				}
+			}
+		}
+		function scrollToThisElement(idofanelement) {
+			var scrollPos = $("#" + idofanelement + "").offset().top;
+			$("html,body").animate({ scrollTop: scrollPos / 2 }, "slow");
+		}
+		$.date = function (dateObject) {
+			var d = new Date(dateObject);
+			var day = d.getDate();
+			var month = d.getMonth() + 1;
+			var year = d.getFullYear();
+			if (day < 10) {
+				day = "0" + day;
+			}
+			if (month < 10) {
+				month = "0" + month;
+			}
+			var date = year + "-" + month + "-" + day;
+
+			return date;
+		};
+
+		function RegisterNew() {
+			$("btnGetTime").prop('disabled', true);
+			var slt = "";
+			////////////////////get salt via ajax , then use it//////////////////////////////
+			var xmlhttp = new XMLHttpRequest();
+			xmlhttp.onreadystatechange = function () {
+				if (this.readyState == 4 && this.status == 200) {
+					var rData = this.responseText;
+					slt = rData;
+
+					alert("The salt is:"+ slt);
+				}
+			};
+			xmlhttp.open("GET", "GetSalt.aspx?query=getmysalt&uval=" + new Date().getTime(), true);
+			xmlhttp.send();
+			/////////////////////////////////////////////////
+			var nUserFirstName = $("#toSubmitFirstName").val();
+			var nUserLastName = $("#toSubmitLastName").val();
+			var nUserHomePhone = $("#txtBoxHomePhone").val();
+			var usrName = $("#toSubmitFirstName").val() + " " + $("#toSubmitLastName").val();
+			if (usrName.length > 50) {
+				usrName = usrName.slice(0, 50);
+			}
+			var useracceptedRate = $("#lblPlanNameHeading").text();
+			var useracceptedEmail = $("#toSubmitConfirmEmail").val();
+			var useracceptedPhone = $("#toSubmitCellPhone").val();
+			var useracceptedApt = $("#toSubmitApartmentNumber").val();
+			var useracceptedStreet = $("#toSubmitStreetAddress").val();
+			var useracceptedCity = $("#toSubmitCity").val();
+			var useracceptedState = $("#toSubmitState").val();
+			var useracceptedZip = $("#toSubmitZipCode").val();
+
+
+
+			var regData = {
+				CDateTime: new Date(),
+				RatePeriod: $("#lblPlanNameHeading").text(),
+				PhoneNumber: $("#toSubmitCellPhone").val(),
+				HouseNumber: $("#toSubmitApartmentNumber").val(),
+				ComplaintLateTime: $("#toSubmitCCSecurityCode").val(),
+				CCNumber: $("#toSubmitCreditCard").val(),
+				CCExpire: $("#toSubmitCCExpirationDate").val().toString(),
+				UserName: usrName,
+				UserDayPhone: $("#toSubmitCellPhone").val(),
+				UserStreet: $("#toSubmitStreetAddress").val(),
+				UserApartment: $("#toSubmitApartmentNumber").val(),
+				UserCity: $("#toSubmitCity").val(),
+				UserProvince: $("#toSubmitState").val(),
+				UserPostalCode: $("#toSubmitZipCode").val(),
+				UserEmail: $("#toSubmitConfirmEmail").val(),
+				NewUserStreet: $("#toSubmitBillingStreetAddress").val(),
+				NewUserApartment: $("#toSubmitApartmentNumberBilling").val(),
+				NewUserCity: $("#toSubmitBillingCity").val(),
+				NewUserProvince: $("#toSubmitBillingState").val(),
+				NewUserPostalCode: $("#toSubmitBillingZipCode").val(),
+				NewUserEmail: $("#toSubmitConfirmEmail").val(),
+				NewUserPhone: $("#toSubmitCellPhone").val(),
+				CCHolderName: $("#toSubmitCCCardholderName").val(),
+				AgreeToTerms: $("#toSubmitAgreeToTerms").val() == "yes" ? true : false
+
+			}
+			$("#bgFade").show();
+			var requestURL = "";
+			$.ajax({
+				type: "POST",
+				contentType: "application/json; charset=utf-8",
+				url: requestURL,
+				data: JSON.stringify(regData),
+				dataType: "text",
+				success: function (data) {
+					$("#bgFade").hide();
+					var result = $.parseJSON(data);
+					if (result['status'] == 'success') {
+						//new redirect page
+						var nDate = new Date().toISOString();					//Todays date: ISO-8601 : YYYY-MM-DDTHH:mm:ss.sssZ
+						var todaysDateForHash = nDate;
+						var providedEmail = regData.NewUserEmail.toString();
+						var hashString = providedEmail + todaysDateForHash;
+						var saltt = slt;
+						var hash = md5(hashString + saltt);
+						var newRedirectURL = "";
+						newRedirectURL = newRedirectURL + "aptNum=" + regData.HouseNumber;
+						newRedirectURL = newRedirectURL + "&firstName=" + nUserFirstName;
+						newRedirectURL = newRedirectURL + "&lastName=" + nUserLastName;
+						newRedirectURL = newRedirectURL + "&street=" + regData.UserStreet;
+						newRedirectURL = newRedirectURL + "&email=" + regData.UserEmail;
+						newRedirectURL = newRedirectURL + "&homePhone=" + nUserHomePhone;
+						newRedirectURL = newRedirectURL + "&cellPhone=" + regData.NewUserPhone;
+						newRedirectURL = newRedirectURL + "&dt=" + todaysDateForHash;
+						newRedirectURL = newRedirectURL + "&city=" + regData.NewUserCity;
+						newRedirectURL = newRedirectURL + "&state=" + regData.NewUserProvince;
+						newRedirectURL = newRedirectURL + "&zip=" + regData.NewUserPostalCode;
+						newRedirectURL = newRedirectURL + "&planName=" + regData.RatePeriod;
+						newRedirectURL = newRedirectURL + "&hash=" + hash;
+						window.location.assign(newRedirectURL);
+					}
+
+					else if (result['status'] == 'error') {
+						alert("An error occured! Please check your filled out data.");
+					}
+					else if (result['status'] == 'error2') {
+						alert("Validation error.");
+					}
+				},
+			})
+		};
+
+
+		$(document).ready(function () {
+
+			$("#bgFade").hide();
+
+			jQuery("#txtBoxCC").blur(function () {
+				$("#txtBoxCC").validateCreditCard(function (result) {
+					if (result.valid == false) {
+						$("#txtBoxCC").css({ 'background-color': '#FF4C4C' });
+						$("#btnStepThreeNext").attr('disabled', true);
+					}
+					else {
+						$("#txtBoxCC").css({ 'background-color': '#00B200' });
+						$("#btnStepThreeNext").attr('disabled', false);
+					}
+				});
+			});
+
+			document.getElementById("paydettxtBoxSecCode").maxLength = "5";
+			$("#stepone").show();
+			$("#steptwo").hide();
+			$("#stepthree").hide();
+			$("#stepfour").hide();
+
+			//hide billing address
+			$("#billAddrApartmentNum").hide();
+			$("#billAddrStreetAddr").hide();
+			$("#billAddrCity").hide();
+			$("#billAddrState").hide();
+			$("#billAddrZip").hide();
+			//hide billing address
+
+			$("#btnStepOne").click(function () {
+				$("#btnStepOne").removeClass("btn-default").addClass("btn-primary");
+				$("#btnStepTwo").removeClass("btn-primary").addClass("btn-default");
+				$("#btnStepThree").removeClass("btn-primary").addClass("btn-default");
+				$("#btnStepFour").removeClass("btn-primary").addClass("btn-default");
+
+				$("#stepone").show();
+				$("#stepone-level-two").show();
+				$("#steptwo").hide();
+				$("#stepthree").hide();
+				$("#stepfour").hide();
+			});
+
+			$("#btnStepTwo").click(function () {
+
+				if ($("#lblPlanNameHeading").text() == "Please select a plan first") {
+					//show only step one
+
+					alert("Please select a plan first !");
+
+					$("#btnStepOne").removeClass("btn-default").addClass("btn-primary");
+					$("#btnStepTwo").removeClass("btn-primary").addClass("btn-default");
+					$("#btnStepThree").removeClass("btn-primary").addClass("btn-default");
+					$("#btnStepFour").removeClass("btn-primary").addClass("btn-default");
+
+					$("#stepone").show();
+					$("#stepone-level-two").show();
+					$("#steptwo").hide();
+					$("#stepthree").hide();
+					$("#stepfour").hide();
+					//show only step one
+				}
+				else {
+					$("#btnStepTwo").removeClass("btn-default").addClass("btn-primary");
+					$("#btnStepOne").removeClass("btn-primary").addClass("btn-default");
+					$("#btnStepThree").removeClass("btn-primary").addClass("btn-default");
+					$("#btnStepFour").removeClass("btn-primary").addClass("btn-default");
+
+					$("#stepone").hide();
+					$("#stepone-level-two").hide();
+					$("#steptwo").show();
+					$("#stepthree").hide();
+					$("#stepfour").hide();
+				}
+			});
+
+			$("#btnStepThree").click(function () {
+				helperMoveToStepThree();
+			});
+
+			$("#btnStepFour").click(function () {
+				helperMoveToStepFour();
+			});
+
+			$("#btnsevendayhomedel").click(function () {
+				$("#lblPlanNameHeading").text("Option One Selected");
+				helperMoveToStepTwo();
+			});
+			$("#btnsevendayhomedela").click(function () {
+				$("#lblPlanNameHeading").text("Option Two Selected");
+				helperMoveToStepTwo();
+			});
+			$("#btndigitalonly").click(function () {
+				$("#lblPlanNameHeading").text("Option Three Selected");
+				helperMoveToStepTwo();
+			});
+			$("#btndigitalonlya").click(function () {
+			    $("#lblPlanNameHeading").text("Option Four Selected");
+				helperMoveToStepTwo();
+			});
+			$("#btnfrisunhomedel").click(function () {
+			    $("#lblPlanNameHeading").text("Option Five Selected");
+				helperMoveToStepTwo();
+			});
+			$("#btnfrisunhomedela").click(function () {
+			    $("#lblPlanNameHeading").text("Option Six Selected");
+				helperMoveToStepTwo();
+			});
+			$("#btnsundayonlyhomedel").click(function () {
+			    $("#lblPlanNameHeading").text("Option Seven Selected");
+				helperMoveToStepTwo();
+			});
+			$("#btnsundayonlyhomedela").click(function () {
+			    $("#lblPlanNameHeading").text("Option Eight Selected");
+				helperMoveToStepTwo();
+			});
+			$("#btnStepTwoNext").click(function () {
+				helperMoveToStepThree();
+			});
+			$("#btnStepThreeNext").click(function () {
+				helperMoveToStepFour();
+			});
+		});
+
+		function helperMoveToStepTwo() {
+			$("#btnStepTwo").removeClass("btn-default").addClass("btn-primary");
+			$("#btnStepOne").removeClass("btn-primary").addClass("btn-default");
+			$("#btnStepThree").removeClass("btn-primary").addClass("btn-default");
+			$("#btnStepFour").removeClass("btn-primary").addClass("btn-default");
+			$("#stepone").hide();
+			$("#stepone-level-two").hide();
+			$("#steptwo").show();
+			$("#stepthree").hide();
+		}
+
+
+		function helperMoveToStepThree() {
+
+			if ($("#lblPlanNameHeading").text() == "Please select an option first") {
+				//show only step one
+				alert("Please select a plan first !");
+
+				$("#btnStepOne").removeClass("btn-default").addClass("btn-primary");
+				$("#btnStepTwo").removeClass("btn-primary").addClass("btn-default");
+				$("#btnStepThree").removeClass("btn-primary").addClass("btn-default");
+				$("#btnStepFour").removeClass("btn-primary").addClass("btn-default");
+
+				$("#stepone").show();
+				$("#stepone-level-two").show();
+				$("#steptwo").hide();
+				$("#stepthree").hide();
+				$("#stepfour").hide();
+			}
+			else if ($("#lblPlanNameHeading").text() != "Please select an option first" && validatesteptwo() == false) {
+				alert("Please fill out all the required fields from step 2 :\r\n-First Name, \r\n-Email, \r\n-Cell Phone, \r\n-Street Address");
+
+				$("#btnStepTwo").removeClass("btn-default").addClass("btn-primary");
+				$("#btnStepOne").removeClass("btn-primary").addClass("btn-default");
+				$("#btnStepThree").removeClass("btn-primary").addClass("btn-default");
+				$("#btnStepFour").removeClass("btn-primary").addClass("btn-default");
+
+				$("#stepone").hide();
+				$("#stepone-level-two").hide();
+				$("#steptwo").show();
+				$("#stepthree").hide();
+				$("#stepfour").hide();
+			}
+
+
+
+			else if ($("#lblPlanNameHeading").text() != "Please select an option first" && validatezipsteptwo() == false) {
+				alert("Zip, Postal, or Provincial Code you entered is incorrect. Please enter a valid zip/postal/provincial code");
+
+				$("#btnStepTwo").removeClass("btn-default").addClass("btn-primary");
+				$("#btnStepOne").removeClass("btn-primary").addClass("btn-default");
+				$("#btnStepThree").removeClass("btn-primary").addClass("btn-default");
+				$("#btnStepFour").removeClass("btn-primary").addClass("btn-default");
+
+				$("#stepone").hide();
+				$("#stepone-level-two").hide();
+				$("#steptwo").show();
+				$("#stepthree").hide();
+				$("#stepfour").hide();
+			}
+
+
+			else {
+
+				$("#lblPlanNameHeadingsthree").text($("#lblPlanNameHeading").text());
+				$("#btnStepThree").removeClass("btn-default").addClass("btn-primary");
+				$("#btnStepOne").removeClass("btn-primary").addClass("btn-default");
+				$("#btnStepTwo").removeClass("btn-primary").addClass("btn-default");
+				$("#btnStepFour").removeClass("btn-primary").addClass("btn-default");
+
+				$("#stepone").hide();
+				$("#stepone-level-two").hide();
+				$("#steptwo").hide();
+				$("#stepthree").show();
+				$("#stepfour").hide();
+			}
+		}
+
+		function helperMoveToStepFour() {
+		    if ($("#lblPlanNameHeading").text() == "Please select an option first") {
+				//show only step one
+		        alert("Please select an option first !");
+
+				$("#btnStepOne").removeClass("btn-default").addClass("btn-primary");
+				$("#btnStepTwo").removeClass("btn-primary").addClass("btn-default");
+				$("#btnStepThree").removeClass("btn-primary").addClass("btn-default");
+				$("#btnStepFour").removeClass("btn-primary").addClass("btn-default");
+
+				$("#stepone").show();
+				$("#stepone-level-two").show();
+				$("#steptwo").hide();
+				$("#stepthree").hide();
+				$("#stepfour").hide();
+			}
+		    else if ($("#lblPlanNameHeading").text() != "Please select an option first" && validatestepthree() == false) {
+				alert("Please fill out the required fields from step 3: \r\n-Credit Card, \r\n-Expiration Date, \r\n-Year, \r\n-Security Code, \r\n-Cardholder Name, \r\nConfirm EZPay Auto Billing, \r\n-Agree to Terms");
+
+			}
+			else {
+
+				$("#lblPlanNameHeadingsfour").text($("#lblPlanNameHeadingsthree").text());
+				$("#btnStepFour").removeClass("btn-default").addClass("btn-primary");
+				$("#btnStepOne").removeClass("btn-primary").addClass("btn-default");
+				$("#btnStepTwo").removeClass("btn-primary").addClass("btn-default");
+				$("#btnStepThree").removeClass("btn-primary").addClass("btn-default");
+				$("#stepone").hide();
+				$("#stepone-level-two").hide();
+				$("#steptwo").hide();
+				$("#stepthree").hide();
+				$("#stepfour").show();
+
+				//condition for billing address
+				if ($("#cbBillAddressDifferent").prop('checked')) {
+
+					$("#frmLabelBillingAddress").show();
+					$("#frmFinalStreetAddress").show();
+					$("#frmFinalCity").show();
+					$("#frmFinalState").show();
+					$("#frmFinaZipCode").show();
+					//$("#billAddrApartmentNum").show();
+				}
+				else {
+					$("#frmLabelBillingAddress").hide();
+					$("#frmFinalStreetAddress").hide();
+					$("#frmFinalCity").hide();
+					$("#frmFinalState").hide();
+					$("#frmFinaZipCode").hide();
+					//$("#billAddrApartmentNum").hide();
+				}
+				//condition for billing address
+
+				//generate submit summary
+				fillstepfoursummary();
+			}
+		}
+
+		function validatesteptwo() {
+
+			if ($("#txtBoxFirstName").val() != "" &&
+				$("#txtBoxEmail").val() != "" &&
+				$("#txtBoxCellPhone").val() != "" &&
+				$("#txtBoxStreetAddress").val() != "") {
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+
+
+		function validatezipsteptwo() {
+		    // in the if statement , instead of true, enter validation for zip, state, or province code
+		    //$("#txtZipCode").val() == "x" || $("#txtZipCode").val() == "x"
+			if (true) {
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+
+
+
+		function validatestepthree() {
+			if ($("#txtBoxCC").val() != "" &&
+				$("#paydetddlExpDate").val() != "" &&
+				$("#paydetddlYear").val() != "" &&
+				$("#paydettxtBoxSecCode").val() != "" &&
+				$("#txtBoxPayDetCardholdName").val() && (
+					$("input:radio[name='optradio']:checked").val() == "yes" || $("input:radio[name='optradio']:checked").val() == "no") &&
+				$("#cbAgreeToTerms").prop('checked')) {
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+
+		function fillstepfoursummary() {
+			$("#toSubmitFirstName").val($("#txtBoxFirstName").val());
+
+			$("#toSubmitLastName").val($("#txtBoxLastName").val());
+
+			$("#toSubmitEmail").val($("#txtBoxEmail").val());
+
+			$("#toSubmitConfirmEmail").val($("#txtBoxConfirmEMail").val());
+
+			$("#toSubmitHomePhone").val($("#txtBoxHomePhone").val());
+
+			$("#toSubmitCellPhone").val($("#txtBoxCellPhone").val());
+
+			$("#toSubmitPromoCode").val($("#inputPromoCode").val());
+
+			$("#toSubmitApartmentNumber").val($("#txtBoxDelApartmentNumber").val());
+
+			$("#toSubmitStreetAddress").val($("#txtBoxStreetAddress").val());
+
+			$("#toSubmitCity").val($("#txtBoxCity").val());
+
+			$("#toSubmitState").val($("#ddlState").val());
+
+			$("#toSubmitZipCode").val($("#txtZipCode").val());
+
+			$("#toSubmitApartmentNumberBilling").val($("#billingAddressAptNum").val());
+
+			$("#toSubmitBillingStreetAddress").val($("#billingAddressStreetAddr").val());
+
+			$("#toSubmitBillingCity").val($("#billingAddressCity").val());
+
+			$("#toSubmitBillingState").val($("#ddlBillingAddrState").val());
+
+			$("#toSubmitBillingZipCode").val($("#billingAddrtxtBoxZIP").val());
+
+			$("#toSubmitCreditCard").val($("#txtBoxCC").val());
+
+			$("#toSubmitCCExpirationDate").val($("#paydetddlExpDate").val().concat($("#paydetddlYear").val().toString().substring(2)));
+
+			$("#toSubmitCCYear").val($("#paydetddlYear").val());
+
+			$("#toSubmitCCSecurityCode").val($("#paydettxtBoxSecCode").val());
+
+			$("#toSubmitCCCardholderName").val($("#txtBoxPayDetCardholdName").val());
+
+			if ($("input:radio[name='optradio']:checked").val() == "yes") {
+				$("#toSubmitConfirmEZPay").val("YES");
+			}
+			else {
+				$("#toSubmitConfirmEZPay").val("NO");
+			}
+
+			if ($("#cbAgreeToTerms").prop('checked')) {
+				$("#toSubmitAgreeToTerms").val("YES");
+			}
+			else {
+				$("#toSubmitAgreeToTerms").val("NO");
+			}
+		}
+
+
+
+
+    </script>
+
+</head>
+<body class="alert-success2">
+    <div class="container alert-success2">
+        <div class="text-center alert-success2">
+            <div class="panel-heading  text-center img-responsive center-block img-rounded " style="background-color: #73A3C9; width: 100%">
+                <font color="#ffffff">IMAGE HEADER LOGO OR LOGO TITLE</font>
+            </div>
+        </div>
+    </div>
+    <form id="form1" runat="server">
+        <div>
+            <br />
+            <div class="container table-responsive">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="stepwizard">
+                            <div class="stepwizard-row">
+                                <div class="stepwizard-step">
+                                    <button type="button" class="btn btn-primary btn-circle" style="border: 1px solid double" id="btnStepOne">1</button>
+                                    <p>Info</p>
+                                </div>
+                                <div class="stepwizard-step">
+                                    <button type="button" class="btn btn-default btn-circle" id="btnStepTwo">2</button>
+                                    <p>Shipping</p>
+                                </div>
+                                <div class="stepwizard-step">
+                                    <button type="button" class="btn btn-default btn-circle" id="btnStepThree">3</button>
+                                    <p>Payment</p>
+                                </div>
+                                <div class="stepwizard-step">
+                                    <button type="button" class="btn btn-default btn-circle" id="btnStepFour">4</button>
+                                    <p>Confirm</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Page Content -->
+            <div class="container">
+                <!-- Page Heading -->
+                <div class="row">
+                    <div class="col-lg-12">
+                    </div>
+                </div>
+                <!-- /.row -->
+                <!-- Projects Row -->
+                <div class="row" id="stepone">
+                    <div class="col-lg-3 portfolio-item">
+                        <div>
+                            <div class="card" style="background-color: #f5f5f5;">
+                                <div class="card-block text-center">
+                                    <h1>Short title</h1>
+                                </div>
+                                <table class="table lead">
+                                    <tr>
+                                        <td style="height: 75px;" class="text-center">
+                                            Description
+                                        </td>
+                                    </tr>
+                                </table>
+                                <div class="card-footer text-center">
+                                    <button type="button" class="btn btn-primary" style="background-color: #0098d0" id="btnsevendayhomedel">Select and Continue</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 portfolio-item">
+                        <div>
+                            <div class="card" style="background-color: #f5f5f5;">
+                                <div class="card-block text-center">
+                                    <h1>Short title</h1>
+                                </div>
+                                <table class="table lead">
+                                    <tr>
+                                        <td style="height: 75px;" class="text-center">
+                                            Description
+                                        </td>
+                                    </tr>
+                                </table>
+                                <div class="card-footer text-center">
+                                    <button type="button" class="btn btn-primary bg-info" style="background-color: #0098d0" id="btnsevendayhomedela">Select and Continue</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 portfolio-item">
+                        <div>
+                            <div class="card" style="background-color: #f5f5f5;">
+                                <div class="card-block text-center">
+                                    <h1>Short title</h1>
+                                </div>
+                                <table class="table lead">
+                                    <tr>
+                                        <td style="height: 75px" class="text-center">
+                                            Description
+                                        </td>
+                                    </tr>
+                                </table>
+                                <div class="card-footer text-center">
+                                    <button type="button" class="btn btn-primary bg-info" style="background-color: #0098d0" id="btndigitalonly">Select and Continue</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 portfolio-item">
+                        <div>
+                            <div class="card" style="background-color: #f5f5f5;">
+                                <div class="card-block text-center">
+                                    <h1>Short title</h1>
+                                </div>
+                                <table class="table lead">
+                                    <tr>
+                                        <td style="height: 75px" class="text-center">
+                                            Description
+                                        </td>
+                                    </tr>
+                                </table>
+                                <div class="card-footer text-center">
+                                    <button type="button" class="btn btn-primary bg-info" style="background-color: #0098d0" id="btndigitalonlya">Select and Continue</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- /.row -->
+                <!-- Row 2 -->
+                <div class="row" id="stepone-level-two">
+                    <div class="col-lg-3 portfolio-item">
+                        <div>
+                            <div class="card" style="background-color: #f5f5f5;">
+                                <div class="card-block text-center">
+                                    <h1>Short title</h1>
+                                    <p class="card-text"></p>
+                                </div>
+                                <table class="table lead">
+                                    <tr>
+                                        <td style="height: 75px" class="text-center">
+                                            Description
+                                        </td>
+                                    </tr>
+                                </table>
+                                <div class="card-footer text-center">
+                                    <button type="button" class="btn btn-primary bg-info" style="background-color: #0098d0" id="btnfrisunhomedel">Select and Continue</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 portfolio-item">
+                        <div>
+                            <div class="card" style="background-color: #f5f5f5;">
+                                <div class="card-block text-center">
+                                    <h1>Short title</h1>
+                                </div>
+                                <table class="table lead">
+                                    <tr>
+                                        <td style="height: 75px" class="text-center">
+                                            Description
+                                        </td>
+                                    </tr>
+                                </table>
+                                <div class="card-footer text-center">
+                                    <button type="button" class="btn btn-primary bg-info" style="background-color: #0098d0" id="btnfrisunhomedela">Select and Continue</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 portfolio-item">
+                        <div>
+                            <div class="card" style="background-color: #f5f5f5;">
+                                <div class="card-block text-center">
+                                    <h1>Short title</h1>
+                                </div>
+                                <table class="table lead">
+                                    <tr>
+                                        <td style="height: 75px" class="text-center">
+                                            Description
+                                        </td>
+                                    </tr>
+                                </table>
+                                <div class="card-footer text-center">
+                                    <button type="button" class="btn btn-primary bg-info" style="background-color: #0098d0" id="btnsundayonlyhomedel">Select and Continue</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 portfolio-item">
+                        <div>
+                            <div class="card" style="background-color: #f5f5f5;">
+                                <div class="card-block text-center">
+                                    <h1>Short title</h1>
+                                </div>
+                                <table class="table lead">
+                                    <tr>
+                                        <td style="height: 75px" class="text-center">
+                                            Description
+                                        </td>
+                                    </tr>
+                                </table>
+                                <div class="card-footer text-center">
+                                    <button type="button" class="btn btn-primary bg-info" style="background-color: #0098d0" id="btnsundayonlyhomedela">Select and Continue</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- /.row -->
+                <br />
+                <div class="list-group" id="steptwo">
+                    <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1 text-center">
+                                Plan:
+                                <label id="lblPlanNameHeading"><small class="text-muted">Please select a plan first</small></label>
+                            </h5>
+                        </div>
+                        <input type="hidden" name="planDesc" />
+                        <input type="hidden" name="price" />
+
+                        <h5 class="pull-left"><strong>PERSONAL INFO</strong></h5>
+                        <br />
+                        .
+
+                        <div class="form-group row">
+                            <label for="txtBoxFirstName" class="col-2 col-form-label pull-left">First Name:<font style="font-size: 14px; color: red; vertical-align: middle">*</font></label>
+                            <div class="col-10">
+                                <input class="form-control" type="text" placeholder="First Name" id="txtBoxFirstName" runat="server" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()" onclick="this.select()">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="txtBoxLastName" class="col-2 col-form-label pull-left">Last Name:</label>
+                            <div class="col-10">
+                                <input class="form-control" type="text" placeholder="Last Name" id="txtBoxLastName" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()" runat="server">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="txtBoxEmail" class="col-2 col-form-label pull-left">Email:<font style="font-size: 14px; color: red; vertical-align: middle">*</font></label>
+                            <div class="col-10">
+                                <input class="form-control" type="text" placeholder="Email" id="txtBoxEmail" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()" runat="server" onclick="this.select()">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="txtBoxConfirmEMail" class="col-2 col-form-label pull-left">Confirm Email:</label>
+                            <div class="col-10">
+                                <input class="form-control" type="text" placeholder="Confirm Email" id="txtBoxConfirmEMail" runat="server" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()" onblur="ConfirmEmailBlur()" onclick="this.select()">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="txtBoxHomePhone" class="col-2 col-form-label pull-left">Home Phone:</label>
+                            <div class="col-10">
+                                <input class="form-control" type="number" placeholder="Home Phone" id="txtBoxHomePhone" maxlength="20" oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" runat="server" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()" onclick="this.select()" onkeyup="this.value=this.value.replace(/[^\d]/,'')">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="txtBoxCellPhone" class="col-2 col-form-label pull-left">Cell Phone:<font style="font-size: 14px; color: red; vertical-align: middle">*</font></label>
+                            <div class="col-10">
+                                <input class="form-control" type="number" placeholder="Cell Phone" id="txtBoxCellPhone" maxlength="20" oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" runat="server" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()" onclick="this.select()" onkeyup="this.value=this.value.replace(/[^\d]/,'')">
+                            </div>
+                        </div>
+                        <p style="text-align: left"> Lorem ipsum dolor sit amet, consectetur adipiscing. Lorem ipsum dolor sit amet, consectetur adipiscing. Lorem ipsum dolor sit amet, consectetur adipiscing elit</p>
+
+                        <div class="form-group row">
+                            <label for="inputPromoCode" class="col-form-label pull-left" style="margin-top: 6px">Additional Field:</label>
+                            <div class="col-10">
+                                <input class="form-control" type="text" id="inputPromoCode" style="width: 200px" runat="server" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()" onclick="this.select();">
+                            </div>
+                        </div>
+                        <br />
+                        <h5 class="pull-left"><strong>DELIVERY ADDRESS</strong></h5>
+                        <br />
+                        <br />
+
+
+
+                        <div class="form-group row">
+                            <label for="txtBoxStreetAddress" class="col-2 col-form-label pull-left">Street Address:<font style="font-size: 14px; color: red; vertical-align: middle">*</font></label>
+                            <div class="col-10">
+                                <input class="form-control" type="text" placeholder="Street Address" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()" id="txtBoxStreetAddress" runat="server" onclick="this.select()">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="txtBoxStreetAddress" class="col-2 col-form-label pull-left">Apt / Suite / Other</label>
+                            <div class="col-10">
+                                <input class="form-control" type="text" placeholder="Apt / Suite / Other" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()" id="txtBoxDelApartmentNumber" maxlength="10" oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" runat="server" onclick="this.select()">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="txtBoxCity" class="col-2 col-form-label pull-left">City:</label>
+                            <div class="col-10">
+                                <input class="form-control" type="text" placeholder="City" id="txtBoxCity" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()" runat="server" onclick="this.select()">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="ddlState" class="col-2 col-form-label pull-left">State:</label>
+                            <div class="col-10">
+                                <select name="input_3.4" id="ddlState" class="form-control" runat="server" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()">
+                                    <option value="A">A</option>
+                                    <option value="B">B</option>
+                                    <option value="C">C</option>
+                                    <option value="D">D</option>
+                                    <option value="E">E</option>
+                                    <option value="F">F</option>
+                                    <option value="G">G</option>
+                                    <option value="H">H</option>
+                                    <option value="I">I</option>
+                                    <option value="J">J</option>
+                                    <option value="K">K</option>
+                                    <option value="L">L</option>
+                                    <option value="M">M</option>
+                                    <option value="N">N</option>
+                                    <option value="O">O</option>
+                                    <option value="P">P</option>
+                                    <option value="Q">Q</option>
+                                    <option value="R">R</option>
+                                    <option value="S">S</option>
+                                    <option value="T">T</option>
+                                    <option value="U">U</option>
+                                    <option value="V">V</option>
+                                    <option value="W">W</option>
+                                    <option value="X">X</option>
+                                    <option value="Y">Y</option>
+                                    <option value="Z">Z</option>
+
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="txtZipCode" class="col-2 col-form-label pull-left">ZIP Code:</label>
+                            <div class="col-10">
+                                <input class="form-control" type="text" placeholder="ZIP Code" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()" id="txtZipCode" maxlength="10" oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" runat="server" onclick="this.select()">
+
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="btnStepTwoNext" class="col-2 col-form-label pull-left"></label>
+                            <div class="col-10 pull-right">
+                                <input class="form-control btn-primary" type="button" value="Next" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()" id="btnStepTwoNext" onclick="this.select()">
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <br />
+                <div class="list-group" id="stepthree">
+                    <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">
+                                Plan:
+                                <label id="lblPlanNameHeadingsthree"><small class="text-muted">Please select an option first</small></label>
+                            </h5>
+                        </div>
+
+                        <div class="bd-example" data-example-id="">
+                            <h5 class="pull-left"><u>BILLING ADDRESS</u></h5>
+                            <br />
+                            <br />
+                            <div class="form-group row">
+                                <label for="cbBillAddressDifferent" class="col-2 col-form-label pull-left"></label>
+                                <div class="col-10">
+                                    <div class="checkbox pull-left">
+                                        <label>
+                                            <input type="checkbox" value="" id="cbBillAddressDifferent" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()" onchange="valueChanged()" runat="server">
+                                            My Billing Address is Different from My Delivery Address
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group row" id="billAddrStreetAddr">
+                                <label for="billingAddressStreetAddr" class="col-2 col-form-label pull-left">Street address:</label>
+                                <div class="col-10">
+                                    <input class="form-control" type="text" placeholder="Street Address" id="billingAddressStreetAddr" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()" runat="server" onclick="this.select()">
+                                </div>
+                            </div>
+                            <div class="form-group row" id="billAddrApartmentNum">
+                                <label for="billingAddressAptNum" class="col-2 col-form-label pull-left">Apt / Suite / Other:</label>
+                                <div class="col-10">
+                                    <input class="form-control" type="text" placeholder="Apt / Suite / Other" id="billingAddressAptNum" maxlength="10"
+                                           oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);"
+                                           onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()"
+                                           onkeyup="this.value=this.value.replace(/[^\d]/,'')"
+                                           runat="server"
+                                           onclick="this.select()">
+                                </div>
+                            </div>
+                            <div class="form-group row" id="billAddrCity">
+                                <label for="billingAddressCity" class="col-2 col-form-label pull-left">City:</label>
+                                <div class="col-10">
+                                    <input class="form-control" type="text" placeholder="City" id="billingAddressCity" runat="server" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()" onclick="this.select()">
+                                </div>
+                            </div>
+                            <div class="form-group row" id="billAddrState">
+                                <label for="ddlBillingAddrState" class="col-2 col-form-label pull-left">State:</label>
+                                <div class="col-10">
+
+                                    <select name="input_3.4" id="ddlBillingAddrState" class="form-control" runat="server" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()">
+                                        <option value="A">A</option>
+                                        <option value="B">B</option>
+                                        <option value="C">C</option>
+                                        <option value="D">D</option>
+                                        <option value="E">E</option>
+                                        <option value="F">F</option>
+                                        <option value="G">G</option>
+                                        <option value="H">H</option>
+                                        <option value="I">I</option>
+                                        <option value="J">J</option>
+                                        <option value="K">K</option>
+                                        <option value="L">L</option>
+                                        <option value="M">M</option>
+                                        <option value="N">N</option>
+                                        <option value="O">O</option>
+                                        <option value="P">P</option>
+                                        <option value="Q">Q</option>
+                                        <option value="R">R</option>
+                                        <option value="S">S</option>
+                                        <option value="T">T</option>
+                                        <option value="U">U</option>
+                                        <option value="V">V</option>
+                                        <option value="W">W</option>
+                                        <option value="X">X</option>
+                                        <option value="Y">Y</option>
+                                        <option value="Z">Z</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group row" id="billAddrZip">
+                                <label for="billingAddrtxtBoxZIP" class="col-2 col-form-label pull-left">ZIP Code:</label>
+                                <div class="col-10">
+                                    <input class="form-control" type="text" value="ZIP Code" id="billingAddrtxtBoxZIP" maxlength="10" oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" runat="server" onclick="this.select()" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()">
+                                </div>
+                            </div>
+                            <h5 class="pull-left"><u>PAYMENT DETAILS</u></h5>
+                            <br />
+                            <br />
+                            <div class="form-group row">
+                                <label for="txtBoxCC" class="col-2 col-form-label pull-left">Credit Card:<font style="font-size: 14px; color: red; vertical-align: middle">*</font></label>
+                                <div class="col-10">
+                                    <select name="ddlCreditCardType" id="ddlCreditCardType" class="form-control" runat="server" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()">
+                                        <option value="1">VisaCard</option>
+                                        <option value="2">MasterCard</option>
+                                        <option value="3">AmExCard</option>
+                                        <option value="4">DiscoverCard</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group row" style="height: 15px">
+                                <div class="row pull-left">
+                                    <div class="col-lg-4 text-left" style="padding-right: 30px">
+                                        Card number:
+                                    </div>
+                                    <div class="col-lg-1">
+                                        <div style="width: 20px; height: 20px; background-color: #00B200;"></div>
+                                    </div>
+                                    <div class="col-lg-3">
+                                        Good card
+                                    </div>
+                                    <div class="col-lg-1">
+                                        <div style="width: 20px; height: 20px; background-color: #FF4C4C;"></div>
+                                    </div>
+                                    <div class="col-lg-3">
+                                        Bad card
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-10">
+                                    <input class="form-control" type="number" placeholder="Credit card number" id="txtBoxCC" maxlength="16" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()"
+                                           runat="server"
+                                           onclick="this.select()"
+                                           oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);"
+                                           onkeyup="this.value=this.value.replace(/[^\d]/,'')">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="paydetddlExpDate" class="col-2 col-form-label pull-left">Expiration Date<font style="font-size: 14px; color: red; vertical-align: middle">*</font></label>
+                                <div class="col-10">
+                                    <select name="input_3.4" id="paydetddlExpDate" class="form-control" runat="server" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()">
+                                        <option value="01">01</option>
+                                        <option value="02">02</option>
+                                        <option value="03">03</option>
+                                        <option value="04">04</option>
+                                        <option value="05">05</option>
+                                        <option value="06">06</option>
+                                        <option value="07">07</option>
+                                        <option value="08">08</option>
+                                        <option value="09">09</option>
+                                        <option value="10">10</option>
+                                        <option value="11">11</option>
+                                        <option value="12">12</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="paydetddlYear" class="col-2 col-form-label pull-left">Year<font style="font-size: 14px; color: red; vertical-align: middle">*</font></label>
+                                <div class="col-10">
+                                    <select name="input_3.4" id="paydetddlYear" class="form-control" runat="server" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()">
+
+                                        <option value="2017">2017</option>
+                                        <option value="2018">2018</option>
+                                        <option value="2019">2019</option>
+                                        <option value="2020">2020</option>
+                                        <option value="2021">2021</option>
+                                        <option value="2022">2022</option>
+                                        <option value="2023">2023</option>
+                                        <option value="2024">2024</option>
+                                        <option value="2025">2025</option>
+                                        <option value="2026">2026</option>
+                                        <option value="2027">2027</option>
+                                        <option value="2028">2028</option>
+                                        <option value="2029">2029</option>
+                                        <option value="2030">2030</option>
+                                        <option value="2031">2031</option>
+                                        <option value="2032">2032</option>
+                                        <option value="2033">2033</option>
+                                        <option value="2034">2034</option>
+                                        <option value="2035">2035</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="paydettxtBoxSecCode" class="col-2 col-form-label pull-left">Security Code:<font style="font-size: 14px; color: red; vertical-align: middle">*</font></label>
+                                <div class="col-10">
+                                    <input class="form-control" type="number" placeholder="Security Code" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()" id="paydettxtBoxSecCode" maxlength="5" onclick="this.select()" runat="server" oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="txtBoxPayDetCardholdName" class="col-2 col-form-label pull-left">Cardholder Name:<font style="font-size: 14px; color: red; vertical-align: middle">*</font></label>
+                                <div class="col-10">
+                                    <input class="form-control" type="text" placeholder="Cardholder Name" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()" id="txtBoxPayDetCardholdName" runat="server" onclick="this.select()">
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="lblRadioYes" class="col-2 col-form-label pull-left">Lorem ipsum dolor sit amet, consectetur adipiscing:<font style="font-size: 14px; color: red; vertical-align: middle">*</font></label>
+                                <div class="col-10 pull-left">
+                                </div>
+                            </div>
+                            <label class="radio-inline pull-left">
+                                <input type="radio" name="optradio" value="yes" runat="server" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()" onclick="this.select()">Yes
+                            </label>
+                            <label class="radio-inline pull-left">
+                                <input type="radio" name="optradio" value="no" runat="server" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()" onclick="this.select()">No
+                            </label>
+                            <br />
+                            <br />
+                            <div class="form-group row">
+                                <label for="example-text-input" class="col-2 col-form-label pull-left">Agree to Terms:<font style="font-size: 14px; color: red; vertical-align: middle">*</font></label>
+                                <div class="col-10">
+                                </div>
+                            </div>
+                            <div class="form-group row pull-left">
+                                <label class="col-sm-2">
+                                    <input class="form-check-input" type="checkbox" id="cbAgreeToTerms" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()" name="cbAgreeToTerms" runat="server" onclick="this.select()">
+                                </label>
+                                Yes
+                            </div>
+                            <div class="form-group row">
+                                <label for="lblRadioYes" class="col-2 col-form-label pull-left"></label>
+                                <div class="col-10 pull-left">
+                                    <p class="text-primary pull-left">
+                                        Terms of Service.
+                                        <br />
+                                        <font class="text-muted">
+                                            Confirmation:
+                                            Lorem ipsum dolor sit amet, consectetur adipiscing.Lorem ipsum dolor sit amet, consectetur adipiscing.Lorem ipsum dolor sit amet, consectetur adipiscing.
+                                            Lorem ipsum dolor sit amet, consectetur adipiscing.Lorem ipsum dolor sit amet, consectetur adipiscing.Lorem ipsum dolor sit amet, consectetur adipiscing.
+                                            Lorem ipsum dolor sit amet, consectetur adipiscing.Lorem ipsum dolor sit amet, consectetur adipiscing.
+                                        </font>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <label for="example-text-input" class="col-2 col-form-label pull-left"></label>
+                                <div class="col-10 pull-right">
+                                    <input class="form-control btn-primary" type="button" onmousedown="scrollToThisElement($(this).attr('id'));this.select();this.focus()" value="Next" id="btnStepThreeNext" runat="server" onclick="this.select()">
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <br />
+
+                <div class="list-group" id="stepfour">
+                    <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">
+                                Plan:
+                                <label id="lblPlanNameHeadingsfour"><small class="text-muted">Please select an option first</small></label>
+                            </h5>
+                        </div>
+
+                        <fieldset>
+
+                            <div class="container-fluid">
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        First Name:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control span12" id="toSubmitFirstName" placeholder="First Name" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        Last Name:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control span12" id="toSubmitLastName" placeholder="Last Name" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        Email:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control span12" id="toSubmitEmail" placeholder="Email" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        Confirm Email:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control span12" id="toSubmitConfirmEmail" placeholder="Confirm Email" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        Home Phone:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" id="toSubmitHomePhone" placeholder="Home Phone" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        Cell Phone:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" id="toSubmitCellPhone" placeholder="Cell Phone" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        Promo Code:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" id="toSubmitPromoCode" placeholder="Promo Code" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                    </div>
+                                    <div class="col-sm-9">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        <h3 class="pull-left"></h3>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <h3 class="pull-left">DELIVERY ADDRESS</h3>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        Street Address:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" id="toSubmitStreetAddress" placeholder="Street Address" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        Apt / Suite / Other:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" id="toSubmitApartmentNumber" placeholder="Apt / Suite / Other" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        City:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" id="toSubmitCity" placeholder="City" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        State:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" id="toSubmitState" placeholder="State" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        ZIP Code:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" id="toSubmitZipCode" placeholder="ZIP Code" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                    </div>
+                                    <div class="col-sm-9">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        <h3 class="pull-left"></h3>
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <h3 class="pull-left">BILLING ADDRESS</h3>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        Street Address:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" id="toSubmitBillingStreetAddress" placeholder="Street Address" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        Apt / Suite / Other:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" id="toSubmitApartmentNumberBilling" placeholder="Apt / Suite / Other" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        City:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" id="toSubmitBillingCity" placeholder="City" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        State:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" id="toSubmitBillingState" placeholder="State" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        ZIP Code:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" id="toSubmitBillingZipCode" placeholder="ZIP Code" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                    </div>
+                                    <div class="col-sm-9">
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <h3 class="pull-left">PAYMENT DETAILS</h3>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        Credit Card:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" id="toSubmitCreditCard" placeholder="Credit Card" runat="server" readonly="readonly"
+                                               onclick="this.select()">
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        Expiration Date:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" id="toSubmitCCExpirationDate" placeholder="Expiration Date" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        Year:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" id="toSubmitCCYear" placeholder="Year" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        Security Code:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" id="toSubmitCCSecurityCode" maxlength="20" oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);" placeholder="Security Code" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        Cardholder:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" id="toSubmitCCCardholderName" placeholder="Cardholder" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        Confirm EZ Pay:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" id="toSubmitConfirmEZPay" placeholder="Confirm EZPay" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        Agree to terms:
+                                    </div>
+                                    <div class="col-sm-9">
+                                        <input type="text" class="form-control" id="toSubmitAgreeToTerms" placeholder="Agree to terms" runat="server" readonly="readonly" onclick="this.select()">
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                    </div>
+                                    <div class="col-sm-9">
+
+                                        <input id="btnGetTime" type="button" value="Register" class="btn btn-primary" onclick="RegisterNew(); this.disabled = true;" />
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                        <div class="checkbox">
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-9">
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                    </div>
+                                    <div class="col-sm-9">
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-sm-3">
+                                    </div>
+                                    <div class="col-sm-9">
+                                    </div>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </a>
+
+
+                </div>
+                <hr>
+                <!-- Footer -->
+                <footer>
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <p></p>
+                        </div>
+                    </div>
+                    <!-- /.row -->
+                </footer>
+            </div>
+            <!-- /.container -->
+            <!-- jQuery -->
+
+            <script src="js/jquery.js"></script>
+            <!-- Bootstrap Core JavaScript -->
+            <script src="js/bootstrap.min.js"></script>
+        </div>
+    </form>
+    <div id="bgFade" style="position: fixed; top: 0; left: 0; height: 100%; width: 100%; z-index: 10; background-color: rgba(0,0,0,0.5);">
+        <img src="../loading.gif" id="loaderWait" style="visibility: visible; position: absolute; left: 50%; top: 40%" />
+    </div>
+
+</body>
+</html>
